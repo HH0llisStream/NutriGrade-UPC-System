@@ -1,0 +1,131 @@
+# A food grading system based off of Europes Nutri Grade system, but for the United States.
+# framework: Uses US Database of foods API, searches for UPC with barcode API, gets Nutrition Information
+# for the said UPC, and uses the nutriscale calculator
+
+import requests
+import json
+import pprint
+import re
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
+)
+
+@app.get("/")
+def read_root():
+    return {"Hello Peoples"}
+
+@app.get('/upc')
+def process_upc(upc: str):
+    openff = f"https://world.openfoodfacts.net/api/v2/product/{upc}?fields=nutriscore_data"
+    nutri_score = requests.get(openff).json()
+    print(nutri_score)
+    usda_api = ""
+    url = "https://api.nal.usda.gov/fdc/v1/foods/search"
+    parameters = {
+        "query": upc,
+        "dataType": "Branded",
+        "api_key": usda_api }
+    api_response = requests.get(url, params=parameters)
+    if api_response.status_code == 200: 
+        json_response = api_response.json()
+    # info needed: calories, sugar, sat fat, salt (negatives) and fruit/vegetables, fiber, and protein (positives)
+    if 'foods' not in json_response:
+        return "invalid upc, please try again"
+    food = json_response['foods'][0]
+    # 18 total nutrients accounted for
+    nutrient_lookup = {
+    n["nutrientName"]: f"{n['value']} {n['unitName']}"
+    for n in json_response["foods"][0]["foodNutrients"]}
+    cal = nutrient_lookup.get("Energy")
+    if cal == None:
+        cal = "0"
+    sug = nutrient_lookup.get('Total Sugars')
+    if sug == None:
+        sug = "0"
+    sat_fat = nutrient_lookup.get('Fatty acids, total saturated')
+    if sat_fat == None:
+        sat_fat = "0"
+    salt = nutrient_lookup.get('Sodium, Na')
+    if salt == None:
+        salt = "0"
+    fiber = nutrient_lookup.get('Fiber, total dietary')
+    if fiber == None:
+        fiber = "0"
+    protein = nutrient_lookup.get("Protein")
+    if protein == None:
+        protein = "0"
+
+
+    cal_b = float(re.sub(r'[a-zA-Z]', '', cal).strip())
+    sug_b = float(re.sub(r'[a-zA-Z]', '', sug).strip())
+    sat_fat_b = float(re.sub(r'[a-zA-Z]', '', sat_fat).strip())
+    salt_b = float(re.sub(r'[a-zA-Z]', '', salt).strip())
+    fiber_b = float(re.sub(r'[a-zA-Z]', '', fiber).strip())
+    protein_b = float(re.sub(r'[a-zA-Z]', '', protein).strip())
+
+    #print(food['foodNutrients'][0])
+    #print(food['foodNutrients'][1])
+    #print(food['foodNutrients'][2])
+    def calculations(cal, sug, sat_fat, salt, fiber, protein):
+        points = 0
+
+        print("Calculations Started")
+        if cal < 80:
+            points = points
+        elif cal > 800:
+            points = points + 10
+        else:
+            points = points + (cal/80)
+        if sug < 4.5:
+            points = points
+        elif sug > 45:
+            points = points + 10
+        else:
+            points = points + (sug/4.5)
+        if sat_fat < 1:
+            points = points
+        elif sat_fat > 10:
+            points = points + 10
+        else:
+            points = points + (sat_fat/1)
+        if salt < 90:
+            points = points
+        elif salt > 900:
+            points = points + 10
+        else:
+            points = points + (salt/90)
+        if fiber < 0.7:
+            points = points
+        elif fiber > 3.5:
+            points = points - 5
+        else:
+            points = points - ((fiber/0.7))
+        if protein < 1.6:
+            points = points
+        elif protein > 8:
+            points = points - 5
+        else:
+            points = points - (protein/1.6)
+
+        if points <= -1.05882352941:
+            return "A"
+        elif points <= 1.88235294118:
+            return "B", points
+        elif points <= 9.4117647059:
+            return "C"
+        elif points <= 16.9411764706:
+            return "D"
+        else:
+            return "E"
+        
+    calc_results = calculations(cal_b, sug_b, sat_fat_b, salt_b, fiber_b, protein_b)
+    return calc_results

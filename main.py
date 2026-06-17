@@ -25,10 +25,12 @@ def read_root():
 
 @app.get('/upc')
 def process_upc(upc: str):
-    openff = f"https://world.openfoodfacts.net/api/v2/product/{upc}?fields=nutriscore_data"
-    nutri_score = requests.get(openff).json()
-    print(nutri_score)
-    usda_api = ""
+    #Note to self: Not tested changes
+    #Changes: New OFF URL, and parsing new URL
+    openff = f"https://world.openfoodfacts.net/api/v2/product/{upc}?fields=product_name,nutriscore_data"
+    openff_response = requests.get(openff).json()
+    nutri_score = openff_response["product"]["nutrition_grades"][0]
+    usda_api = "8SUEWLjbckxHgVegcczqatREm8YFgII6JMV8pUmL"
     url = "https://api.nal.usda.gov/fdc/v1/foods/search"
     parameters = {
         "query": upc,
@@ -40,7 +42,6 @@ def process_upc(upc: str):
     # info needed: calories, sugar, sat fat, salt (negatives) and fruit/vegetables, fiber, and protein (positives)
     if 'foods' not in json_response:
         return "invalid upc, please try again"
-    food = json_response['foods'][0]
     # 18 total nutrients accounted for
     nutrient_lookup = {
     n["nutrientName"]: f"{n['value']} {n['unitName']}"
@@ -72,9 +73,6 @@ def process_upc(upc: str):
     fiber_b = float(re.sub(r'[a-zA-Z]', '', fiber).strip())
     protein_b = float(re.sub(r'[a-zA-Z]', '', protein).strip())
 
-    #print(food['foodNutrients'][0])
-    #print(food['foodNutrients'][1])
-    #print(food['foodNutrients'][2])
     def calculations(cal, sug, sat_fat, salt, fiber, protein):
         points = 0
 
@@ -128,4 +126,5 @@ def process_upc(upc: str):
             return "E"
         
     calc_results = calculations(cal_b, sug_b, sat_fat_b, salt_b, fiber_b, protein_b)
-    return calc_results
+    return_data = json.dumps({"a" : calc_results, "b" : nutri_score}, indent = 4)
+    return return_data

@@ -21,7 +21,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar", [
+        "expo-camera",
+            {
+              "cameraPermission": "Allow $(NutriCalculator) to access your camera",
+              "microphonePermission": "Allow $(NutriCalculator) to access your microphone",
+              "recordAudioAndroid": false,
+              "barcodeScannerEnabled": true }
     ]
+  ]
   }
 }

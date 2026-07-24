@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "expo": "^46.0.21",
+    "react-dom": "19.2.3"
+  }
+}

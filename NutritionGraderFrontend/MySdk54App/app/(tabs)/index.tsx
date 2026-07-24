@@ -19,10 +19,11 @@ export default function App() {
   const [nutri_img_url, setNutri_Img_Url] = useState<string | null>(null);
   const [upc, setUPC] = useState<string>('');
   const [SelectedInterface, setSelectedInterface] = useState<string | null>(null);
+  const [permissionPending, setPermissionPending] = useState(false);
 
   async function process_upc(upc: string) {
         try {
-          const response = await fetch(`http://192.168.1.151:8000/upc?upc=${upc}`);
+          const response = await fetch(`http://nutrigrade-upc-system.onrender.com/upc?upc=${upc}`);
           console.log(`querying backend with the upc of: ${upc}`);
           if (!response.ok) {
             throw new Error(`Error Querying [HTTP(s) Error]: ${response.status}`);
@@ -55,15 +56,19 @@ export default function App() {
     }, [barcode]);
     
   if (!permission) {
-    return <View />;
+    return <View style={styles.container} />;
   }
 
 
-  if (!permission.granted) {
+  if (permission.status !== 'granted' && SelectedInterface == "Mobile") {
     return (
       <View style={styles.container}>
         <Text style={styles.message}> Camera use is neccessary for this app to scan products! Please allow it. </Text>
-        <Button onPress={requestPermission} title="Please Grant Camera Permission"/>
+        {permissionPending ? (
+          <Text style={styles.message}>Requesting camera access…</Text>
+        ) : (
+          <Button onPress={() => void requestPermission()} title="Please Grant Camera Permission"/>
+        )}
       </View>
     )
   }
@@ -125,7 +130,9 @@ export default function App() {
           scanned === false ? (
             <View style={styles.container}>
             <View style={styles.screen_mobile}>
-              <CameraView style={styles.camera} facing={facing}
+              <CameraView
+                style={styles.camera}
+                facing={facing}
                 onBarcodeScanned={scanned ? undefined : barcode_scanned}
                 barcodeScannerSettings={{
                   barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e']
@@ -175,6 +182,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
@@ -182,11 +191,15 @@ const styles = StyleSheet.create({
   camera: {
     flex: 1,
     width: '100%',
+    height: '100%',
   },
   screen_mobile: {
-    flex:1,
-    width:'100%',
+    flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#000',
+    position: 'relative',
+    overflow: 'hidden',
   },
   message: {
     textAlign: 'center',
@@ -222,10 +235,7 @@ const styles = StyleSheet.create({
     fontSize : 20,
   },
   overlayButton: {
-    position:'absolute',
-    top: 700,
-    left:375,
-    right:375,
+    position:'relative',
     backgroundColor: '#033a14',
     paddingHorizontal: 16,
     paddingVertical: 12,

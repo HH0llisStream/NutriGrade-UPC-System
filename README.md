@@ -4,3 +4,5 @@ Motivation: I have always found it intresting and sometimes helpful when foods h
 Tech Stack: Backend: Python running on Render, Frontend: React Native on Vercel
 
 Screenshots: https://drive.google.com/drive/folders/15TvRmFtIoUFg6sFH-cpcTPAfx6xHuVLK?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto
+
+Note: The backend may take a little bit to start, please just be patient. Thank you!

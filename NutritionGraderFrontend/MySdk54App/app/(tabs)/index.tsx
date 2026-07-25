@@ -23,7 +23,7 @@ export default function App() {
 
   async function process_upc(upc: string) {
         try {
-          const response = await fetch(`http://nutrigrade-upc-system.onrender.com/upc?upc=${upc}`);
+          const response = await fetch(`https://nutrigrade-upc-system.onrender.com/upc?upc=${upc}`);
           console.log(`querying backend with the upc of: ${upc}`);
           if (!response.ok) {
             throw new Error(`Error Querying [HTTP(s) Error]: ${response.status}`);
@@ -63,11 +63,14 @@ export default function App() {
   if (permission.status !== 'granted' && SelectedInterface == "Mobile") {
     return (
       <View style={styles.container}>
-        <Text style={styles.message}> Camera use is neccessary for this app to scan products! Please allow it. </Text>
+      <TouchableOpacity style={styles.normalButton} onPress={() => {setSelectedInterface(null); setScanned(false)}}>
+          <Text style={styles.buttonText}> Back </Text>
+      </TouchableOpacity>        
+      <Text style={styles.message}> Camera use is neccessary for this app to scan products! Please allow it. </Text>
         {permissionPending ? (
           <Text style={styles.message}>Requesting camera access…</Text>
         ) : (
-          <Button onPress={() => void requestPermission()} title="Please Grant Camera Permission"/>
+          <Button onPress={() => void requestPermission()} title="Grant Camera Permission"/>
         )}
       </View>
     )
@@ -98,7 +101,7 @@ export default function App() {
         {SelectedInterface == null ? (
         <View style={styles.verticalButton}>
           <Button title="Computer Interface" onPress={() => setSelectedInterface("Computer")}/>
-          <Button title="Mobile Interface (Do not use)" onPress={() => setSelectedInterface("Mobile")}/>
+          <Button title="Mobile Interface" onPress={() => setSelectedInterface("Mobile")}/>
         </View>
         ) : (
           <View style={styles.container}>
@@ -223,7 +226,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   normalButton: {
-    backgroundColor: '#033a14',
+    backgroundColor: '#056323',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
